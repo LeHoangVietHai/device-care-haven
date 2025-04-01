@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ const WarrantyForm: React.FC<WarrantyFormProps> = ({ open, onOpenChange, onSubmi
     supplierId: "",
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
-    terms: "",
+    conditions: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -103,15 +104,15 @@ const WarrantyForm: React.FC<WarrantyFormProps> = ({ open, onOpenChange, onSubmi
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="terms" className="text-right">
+          <label htmlFor="conditions" className="text-right">
             Điều Kiện
           </label>
           <Input
             type="text"
-            id="terms"
-            name="terms"
+            id="conditions"
+            name="conditions"
             className="col-span-3"
-            value={warrantyData.terms}
+            value={warrantyData.conditions}
             onChange={handleChange}
           />
         </div>
@@ -181,7 +182,7 @@ const WarrantyPage = () => {
   },
   {
     header: "Điều Kiện",
-    accessorKey: "terms" as keyof Warranty,
+    accessorKey: "conditions" as keyof Warranty,
     enableSorting: false,
   },
 ];

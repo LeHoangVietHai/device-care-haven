@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
-import { format } from "date-fns";
 import { inventories, devices } from "@/data/mockData";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import type { Inventory } from "@/types";
+import type { Inventory, DeviceCondition } from "@/types";
 
 interface InventoryFormProps {
   open: boolean;
@@ -19,8 +19,8 @@ interface InventoryFormProps {
 
 const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSubmit }) => {
   const [deviceId, setDeviceId] = useState("");
-  const [date, setDate] = useState("");
-  const [condition, setCondition] = useState("");
+  const [checkDate, setCheckDate] = useState("");
+  const [condition, setCondition] = useState<DeviceCondition>("tốt");
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,7 +34,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSub
     const newInventory: Inventory = {
       id: Math.random().toString(36).substring(7),
       deviceId: deviceId,
-      date: date,
+      checkDate: checkDate,
       condition: condition,
       notes: notes,
     };
@@ -79,21 +79,26 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSub
             type="date"
             id="date"
             className="col-span-3"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            value={checkDate}
+            onChange={(e) => setCheckDate(e.target.value)}
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <label htmlFor="condition" className="text-right">
             Tình Trạng
           </label>
-          <Select onValueChange={setCondition} defaultValue={condition}>
+          <Select 
+            onValueChange={(value: DeviceCondition) => setCondition(value)} 
+            defaultValue={condition}
+          >
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder="Chọn tình trạng" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="tốt">Tốt</SelectItem>
               <SelectItem value="hỏng">Hỏng</SelectItem>
+              <SelectItem value="bảo trì">Bảo trì</SelectItem>
+              <SelectItem value="sửa chữa">Sửa chữa</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -139,7 +144,7 @@ const Inventory = () => {
     },
     {
       header: "Ngày Kiểm",
-      accessorKey: "date" as keyof Inventory,
+      accessorKey: "checkDate" as keyof Inventory,
       enableSorting: true,
     },
     {

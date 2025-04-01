@@ -1,21 +1,22 @@
+
 import React, { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
-import { format } from "date-fns";
-import { maintenances, devices } from "@/data/mockData";
+import { maintenances as mockMaintenances, devices } from "@/data/mockData";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import type { Maintenance } from "@/types";
+import type { Maintenance, MaintenanceStatus } from "@/types";
 
 const Maintenance = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const [maintenances, setMaintenances] = useState<Maintenance[]>(maintenances);
+  const [maintenances, setMaintenances] = useState<Maintenance[]>(mockMaintenances);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
 
   // Form state

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
-import { format } from "date-fns";
-import { devices, deviceTypes, locations } from "@/data/mockData";
+import { devices, deviceTypes, deviceLocations } from "@/data/mockData";
 import { toast } from "sonner";
 import type { ReactNode } from "react";
-import type { Device } from "@/types";
+import type { Device, DeviceCondition } from "@/types";
 
 interface DeviceFormProps {
   open: boolean;
@@ -20,8 +20,8 @@ interface DeviceFormProps {
 const DeviceForm: React.FC<DeviceFormProps> = ({ open, onOpenChange, onSubmit }) => {
   const [name, setName] = useState("");
   const [deviceTypeId, setDeviceTypeId] = useState("");
-  const [locationId, setLocationId] = useState("");
-  const [status, setStatus] = useState("");
+  const [deviceLocationId, setDeviceLocationId] = useState("");
+  const [deviceStatusId, setDeviceStatusId] = useState("1"); // Default to "Đang sử dụng"
   const [value, setValue] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
 
@@ -31,8 +31,9 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onOpenChange, onSubmit })
       id: Math.random().toString(36).substring(7),
       name,
       deviceTypeId,
-      locationId,
-      status,
+      deviceLocationId,
+      deviceStatusId,
+      employeeId: "E001", // Default employee
       value: parseFloat(value),
       purchaseDate,
     };
@@ -81,30 +82,16 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onOpenChange, onSubmit })
           <label htmlFor="location" className="text-right">
             Vị Trí
           </label>
-          <Select onValueChange={setLocationId}>
+          <Select onValueChange={setDeviceLocationId}>
             <SelectTrigger className="col-span-3">
               <SelectValue placeholder="Chọn vị trí" />
             </SelectTrigger>
             <SelectContent>
-              {locations.map((location) => (
+              {deviceLocations.map((location) => (
                 <SelectItem key={location.id} value={location.id}>
                   {location.name}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="status" className="text-right">
-            Trạng Thái
-          </label>
-          <Select onValueChange={setStatus}>
-            <SelectTrigger className="col-span-3">
-              <SelectValue placeholder="Chọn trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tốt">Tốt</SelectItem>
-              <SelectItem value="hỏng">Hỏng</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -145,7 +132,6 @@ const Devices = () => {
     setData([...data, device]);
   };
 
-  // Fix column definitions to use proper typing
   const columns = [
     {
       header: "Mã Thiết Bị",
@@ -168,16 +154,19 @@ const Devices = () => {
     {
       header: "Vị Trí",
       accessorKey: (row: Device) => {
-        const location = locations.find(l => l.id === row.locationId);
+        const location = deviceLocations.find(l => l.id === row.deviceLocationId);
         return location ? location.name : "N/A";
       },
       enableSorting: true,
     },
     {
       header: "Trạng Thái",
-      accessorKey: (row: Device) => (
-        <StatusBadge status={row.status} />
-      ),
+      accessorKey: (row: Device) => {
+        const condition: DeviceCondition = row.deviceStatusId === "2" ? "bảo trì" : 
+                               row.deviceStatusId === "3" ? "sửa chữa" : 
+                               row.deviceStatusId === "5" ? "hỏng" : "tốt";
+        return <StatusBadge status={condition} />;
+      },
       enableSorting: true,
     },
     {
