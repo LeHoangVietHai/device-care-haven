@@ -1,204 +1,290 @@
 
 import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { getFullMaintenance, getFullDevices } from "@/data/mockData";
+import { maintenances, getFullMaintenances, devices } from "@/data/mockData";
+import { toast } from "sonner";
 import { Pencil, Trash } from "lucide-react";
-import { Maintenance, MaintenanceStatus, Device } from "@/types";
+import type { FullMaintenance, Maintenance as MaintenanceType } from "@/types";
+
+interface MaintenanceFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (values: MaintenanceType) => void;
+  initialData?: MaintenanceType;
+  isEdit?: boolean;
+  isLoading?: boolean;
+}
+
+const MaintenanceForm: React.FC<MaintenanceFormProps> = ({ 
+  open, 
+  onOpenChange, 
+  onSubmit, 
+  initialData,
+  isEdit = false,
+  isLoading = false
+}) => {
+  const [deviceId, setDeviceId] = useState(initialData?.deviceId || "");
+  const [maintenanceDate, setMaintenanceDate] = useState(initialData?.maintenanceDate || "");
+  const [nextMaintenanceDate, setNextMaintenanceDate] = useState(initialData?.nextMaintenanceDate || "");
+  const [status, setStatus] = useState(initialData?.status || "scheduled");
+  const [notes, setNotes] = useState(initialData?.notes || "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const maintenanceData: MaintenanceType = {
+      id: initialData?.id || Math.random().toString(36).substr(2, 9),
+      deviceId,
+      maintenanceDate,
+      nextMaintenanceDate,
+      status,
+      notes,
+    };
+    
+    onSubmit(maintenanceData);
+  };
+
+  return (
+    <FormDialog
+      title={isEdit ? "Cập Nhật Bảo Trì" : "Thêm Bảo Trì"}
+      open={open}
+      onOpenChange={onOpenChange}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+    >
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="device" className="text-right">
+            Thiết Bị
+          </label>
+          <div className="col-span-3">
+            <Select onValueChange={setDeviceId} defaultValue={deviceId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn thiết bị" />
+              </SelectTrigger>
+              <SelectContent>
+                {devices.map((device) => (
+                  <SelectItem key={device.id} value={device.id}>
+                    {device.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="maintenanceDate" className="text-right">
+            Ngày Bảo Trì
+          </label>
+          <Input
+            id="maintenanceDate"
+            type="date"
+            value={maintenanceDate}
+            onChange={(e) => setMaintenanceDate(e.target.value)}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="nextMaintenanceDate" className="text-right">
+            Ngày Bảo Trì Tiếp Theo
+          </label>
+          <Input
+            id="nextMaintenanceDate"
+            type="date"
+            value={nextMaintenanceDate}
+            onChange={(e) => setNextMaintenanceDate(e.target.value)}
+            className="col-span-3"
+          />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="status" className="text-right">
+            Trạng Thái
+          </label>
+          <div className="col-span-3">
+            <Select onValueChange={setStatus} defaultValue={status}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scheduled">Đã lên lịch</SelectItem>
+                <SelectItem value="in-progress">Đang thực hiện</SelectItem>
+                <SelectItem value="completed">Hoàn thành</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="notes" className="text-right">
+            Ghi Chú
+          </label>
+          <Textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="col-span-3"
+            rows={4}
+          />
+        </div>
+      </div>
+    </FormDialog>
+  );
+};
 
 const Maintenance = () => {
-  const [maintenances, setMaintenances] = useState(getFullMaintenance());
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
-  const { toast } = useToast();
-  const devices = getFullDevices();
+  const [data, setData] = useState<FullMaintenance[]>(getFullMaintenances());
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMaintenance, setSelectedMaintenance] = useState<MaintenanceType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [maintenanceData, setMaintenanceData] = useState<Partial<Maintenance>>({
-    id: "",
-    date: "",
-    frequency: "",
-    content: "",
-    status: "chưa bảo trì",
-    deviceId: "",
-  });
-
-  const handleAddMaintenance = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    if (!maintenanceData.id || !maintenanceData.date || !maintenanceData.deviceId) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bảo trì",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if maintenance ID already exists
-    if (maintenances.some(maintenance => maintenance.id === maintenanceData.id)) {
-      toast({
-        title: "Lỗi",
-        description: "Mã bảo trì đã tồn tại",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const device = devices.find(dev => dev.id === maintenanceData.deviceId);
-
-    const newMaintenance: Maintenance = {
-      id: maintenanceData.id as string,
-      date: maintenanceData.date as string,
-      frequency: maintenanceData.frequency as string,
-      content: maintenanceData.content as string,
-      status: maintenanceData.status as MaintenanceStatus,
-      deviceId: maintenanceData.deviceId as string,
-      device: device as Device,
-    };
-
-    setMaintenances([...maintenances, newMaintenance]);
-    setIsAddDialogOpen(false);
-
-    toast({
-      title: "Thành công",
-      description: "Thêm lịch bảo trì mới thành công",
-    });
-
-    // Reset form
-    setMaintenanceData({
-      id: "",
-      date: "",
-      frequency: "",
-      content: "",
-      status: "chưa bảo trì",
-      deviceId: "",
-    });
+  const handleCreate = (maintenance: MaintenanceType) => {
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      // Add to maintenances list
+      const updatedMaintenances = [...maintenances, maintenance];
+      
+      // Get the device info and create a FullMaintenance object
+      const device = devices.find(d => d.id === maintenance.deviceId);
+      if (device) {
+        const fullMaintenance: FullMaintenance = {
+          ...maintenance,
+          deviceName: device.name,
+        };
+        setData([...data, fullMaintenance]);
+      }
+      
+      setAddDialogOpen(false);
+      setIsLoading(false);
+      toast.success("Bảo trì đã được thêm thành công!");
+    }, 500);
   };
 
-  const handleEditMaintenance = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedMaintenance || !maintenanceData.date || !maintenanceData.deviceId) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bảo trì",
-        variant: "destructive",
+  const handleEdit = (maintenance: MaintenanceType) => {
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      // Update maintenances
+      const updatedData = data.map(item => {
+        if (item.id === maintenance.id) {
+          const device = devices.find(d => d.id === maintenance.deviceId);
+          return {
+            ...maintenance,
+            deviceName: device ? device.name : "Unknown",
+          };
+        }
+        return item;
       });
-      return;
-    }
-
-    const device = devices.find(dev => dev.id === maintenanceData.deviceId);
-
-    const updatedMaintenance: Maintenance = {
-      ...selectedMaintenance,
-      date: maintenanceData.date as string,
-      frequency: maintenanceData.frequency as string,
-      content: maintenanceData.content as string,
-      status: maintenanceData.status as MaintenanceStatus,
-      deviceId: maintenanceData.deviceId as string,
-      device: device as Device,
-    };
-
-    setMaintenances(maintenances.map(maintenance =>
-      maintenance.id === selectedMaintenance.id ? updatedMaintenance : maintenance
-    ));
-
-    setIsEditDialogOpen(false);
-
-    toast({
-      title: "Thành công",
-      description: "Cập nhật thông tin bảo trì thành công",
-    });
+      
+      setData(updatedData);
+      setEditDialogOpen(false);
+      setIsLoading(false);
+      toast.success("Bảo trì đã được cập nhật thành công!");
+    }, 500);
   };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa lịch bảo trì này không?")) {
-      setMaintenances(maintenances.filter(item => item.id !== id));
-      toast({
-        title: "Thành công",
-        description: "Xóa lịch bảo trì thành công",
-      });
+  
+  const handleDelete = () => {
+    if (selectedMaintenance) {
+      setIsLoading(true);
+      // Simulate API call
+      setTimeout(() => {
+        setData(data.filter(item => item.id !== selectedMaintenance.id));
+        setDeleteDialogOpen(false);
+        setIsLoading(false);
+        toast.success("Bảo trì đã được xóa thành công!");
+      }, 500);
     }
-  };
-
-  const handleRowClick = (maintenance: Maintenance) => {
-    setSelectedMaintenance(maintenance);
-    setMaintenanceData({
-      id: maintenance.id,
-      date: maintenance.date,
-      frequency: maintenance.frequency,
-      content: maintenance.content,
-      status: maintenance.status,
-      deviceId: maintenance.deviceId,
-    });
-    setIsEditDialogOpen(true);
   };
 
   const columns = [
     {
       header: "Mã Bảo Trì",
-      accessorKey: "id" as keyof Maintenance,
+      accessorKey: "id" as keyof FullMaintenance,
       enableSorting: true,
     },
     {
       header: "Thiết Bị",
-      accessorKey: (row: Maintenance) => {
-        const device = devices.find(d => d.id === row.deviceId);
-        return device ? device.name : "N/A";
-      },
+      accessorKey: "deviceName" as keyof FullMaintenance,
       enableSorting: true,
     },
     {
       header: "Ngày Bảo Trì",
-      accessorKey: "date" as keyof Maintenance,
+      accessorKey: "maintenanceDate" as keyof FullMaintenance,
       enableSorting: true,
     },
     {
-      header: "Tần Suất",
-      accessorKey: "frequency" as keyof Maintenance,
+      header: "Ngày Bảo Trì Tiếp Theo",
+      accessorKey: "nextMaintenanceDate" as keyof FullMaintenance,
       enableSorting: true,
-    },
-    {
-      header: "Nội Dung",
-      accessorKey: "content" as keyof Maintenance,
-      enableSorting: false,
     },
     {
       header: "Trạng Thái",
-      accessorKey: (row: Maintenance) => (
-        <StatusBadge status={row.status} />
-      ),
-      enableSorting: true,
+      accessorKey: (row: FullMaintenance) => {
+        const statusMap: Record<string, string> = {
+          'scheduled': 'Đã lên lịch',
+          'in-progress': 'Đang thực hiện',
+          'completed': 'Hoàn thành',
+          'cancelled': 'Đã hủy'
+        };
+        
+        return <StatusBadge status={statusMap[row.status] || row.status} />;
+      },
+      enableSorting: false,
+    },
+    {
+      header: "Ghi Chú",
+      accessorKey: "notes" as keyof FullMaintenance,
+      enableSorting: false,
     },
     {
       header: "Thao Tác",
-      accessorKey: (row: Maintenance) => (
+      accessorKey: (row: FullMaintenance) => (
         <div className="flex space-x-2">
-          <Button
-            variant="ghost"
+          <Button 
+            variant="ghost" 
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              handleRowClick(row);
+              // Convert FullMaintenance to Maintenance for edit
+              const maintenance: MaintenanceType = {
+                id: row.id,
+                deviceId: row.deviceId,
+                maintenanceDate: row.maintenanceDate,
+                nextMaintenanceDate: row.nextMaintenanceDate,
+                status: row.status,
+                notes: row.notes,
+              };
+              setSelectedMaintenance(maintenance);
+              setEditDialogOpen(true);
             }}
           >
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
+          <Button 
+            variant="ghost" 
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row.id);
+              // Convert FullMaintenance to Maintenance for delete
+              const maintenance: MaintenanceType = {
+                id: row.id,
+                deviceId: row.deviceId,
+                maintenanceDate: row.maintenanceDate,
+                nextMaintenanceDate: row.nextMaintenanceDate,
+                status: row.status,
+                notes: row.notes,
+              };
+              setSelectedMaintenance(maintenance);
+              setDeleteDialogOpen(true);
             }}
           >
             <Trash className="h-4 w-4" />
@@ -210,185 +296,55 @@ const Maintenance = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Quản lý bảo trì</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Thêm lịch bảo trì</Button>
+        <h1 className="text-2xl font-bold">Lịch Bảo Trì</h1>
+        <Button onClick={() => setAddDialogOpen(true)}>Thêm Bảo Trì</Button>
       </div>
-
-      <DataTable
-        data={maintenances}
-        columns={columns}
-        onRowClick={handleRowClick}
-        searchField="content"
+      
+      <DataTable columns={columns} data={data} searchField="deviceName" />
+      
+      {/* Add Maintenance Dialog */}
+      <MaintenanceForm 
+        open={addDialogOpen} 
+        onOpenChange={setAddDialogOpen} 
+        onSubmit={handleCreate}
+        isLoading={isLoading}
       />
-
-      <FormDialog
-        title="Thêm lịch bảo trì mới"
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSubmit={handleAddMaintenance}
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="id">Mã bảo trì</Label>
-            <Input
-              id="id"
-              value={maintenanceData.id}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, id: e.target.value })}
-              placeholder="Ví dụ: M006"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="deviceId">Thiết bị</Label>
-            <Select
-              value={maintenanceData.deviceId}
-              onValueChange={(value) => setMaintenanceData({ ...maintenanceData, deviceId: value })}
+      
+      {/* Edit Maintenance Dialog */}
+      {selectedMaintenance && (
+        <MaintenanceForm 
+          open={editDialogOpen} 
+          onOpenChange={setEditDialogOpen} 
+          onSubmit={handleEdit}
+          initialData={selectedMaintenance}
+          isEdit
+          isLoading={isLoading}
+        />
+      )}
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa lịch bảo trì này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading}>Hủy</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={isLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn thiết bị" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="date">Ngày bảo trì</Label>
-            <Input
-              id="date"
-              type="date"
-              value={maintenanceData.date}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, date: e.target.value })}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="frequency">Tần suất</Label>
-            <Input
-              id="frequency"
-              value={maintenanceData.frequency}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, frequency: e.target.value })}
-              placeholder="Ví dụ: 3 tháng/lần"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="content">Nội dung</Label>
-            <Textarea
-              id="content"
-              value={maintenanceData.content}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, content: e.target.value })}
-              placeholder="Nhập nội dung bảo trì"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="status">Trạng thái</Label>
-            <Select
-              value={maintenanceData.status}
-              onValueChange={(value: MaintenanceStatus) => setMaintenanceData({ ...maintenanceData, status: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="đã bảo trì">Đã bảo trì</SelectItem>
-                <SelectItem value="chưa bảo trì">Chưa bảo trì</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </FormDialog>
-
-      <FormDialog
-        title="Chỉnh sửa thông tin bảo trì"
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onSubmit={handleEditMaintenance}
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="edit-id">Mã bảo trì</Label>
-            <Input
-              id="edit-id"
-              value={maintenanceData.id}
-              disabled
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-deviceId">Thiết bị</Label>
-            <Select
-              value={maintenanceData.deviceId}
-              onValueChange={(value) => setMaintenanceData({ ...maintenanceData, deviceId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn thiết bị" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-date">Ngày bảo trì</Label>
-            <Input
-              id="edit-date"
-              type="date"
-              value={maintenanceData.date}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, date: e.target.value })}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-frequency">Tần suất</Label>
-            <Input
-              id="edit-frequency"
-              value={maintenanceData.frequency}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, frequency: e.target.value })}
-              placeholder="Ví dụ: 3 tháng/lần"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-content">Nội dung</Label>
-            <Textarea
-              id="edit-content"
-              value={maintenanceData.content}
-              onChange={(e) => setMaintenanceData({ ...maintenanceData, content: e.target.value })}
-              placeholder="Nhập nội dung bảo trì"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="edit-status">Trạng thái</Label>
-            <Select
-              value={maintenanceData.status}
-              onValueChange={(value: MaintenanceStatus) => setMaintenanceData({ ...maintenanceData, status: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="đã bảo trì">Đã bảo trì</SelectItem>
-                <SelectItem value="chưa bảo trì">Chưa bảo trì</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </FormDialog>
+              {isLoading ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
