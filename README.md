@@ -1,4 +1,33 @@
-# Welcome to your Lovable project
+
+# Device Care Haven
+
+Hệ thống quản lý bảo trì và sửa chữa thiết bị cho công ty.
+
+## Tính năng chính
+
+- Quản lý thiết bị: theo dõi thông tin thiết bị, giá trị, ngày mua, loại thiết bị, vị trí, trạng thái và người quản lý
+- Quản lý bảo trì: lịch trình bảo trì định kỳ với trạng thái hoàn thành
+- Kiểm kê thiết bị: ghi nhận tình trạng thiết bị trong các đợt kiểm kê
+- Quản lý nhân viên: thông tin liên hệ và phân công
+- Quản lý sửa chữa: hợp đồng sửa chữa thiết bị với chi phí và trạng thái
+- Quản lý hóa đơn: theo dõi hóa đơn sửa chữa và thanh toán
+- Quản lý bảo hành: theo dõi thời hạn bảo hành của thiết bị
+- Lịch sử sửa chữa: ghi nhận quá trình sửa chữa thiết bị
+
+## Công nghệ sử dụng
+
+- React
+- TypeScript
+- Tailwind CSS
+- Shadcn UI
+- React Router
+- React Query
+
+## Hướng dẫn sử dụng
+
+1. Clone dự án
+2. Cài đặt các phụ thuộc: `npm i`
+3. Chạy ứng dụng: `npm run dev`
 
 ## Project info
 
@@ -35,39 +64,3 @@ npm i
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/45a84f82-d7a6-4e37-aa4e-5759083da852) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
