@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,12 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { maintenances, getFullMaintenances, devices } from "@/data/mockData";
 import { toast } from "sonner";
 import { Pencil, Trash } from "lucide-react";
-import type { FullMaintenance, Maintenance as MaintenanceType } from "@/types";
+import type { Maintenance as MaintenanceType, MaintenanceStatus } from "@/types";
+
+// Define an interface for the maintenance with device name
+interface FullMaintenance extends MaintenanceType {
+  deviceName: string;
+}
 
 interface MaintenanceFormProps {
   open: boolean;
@@ -31,10 +35,10 @@ const MaintenanceForm: React.FC<MaintenanceFormProps> = ({
   isLoading = false
 }) => {
   const [deviceId, setDeviceId] = useState(initialData?.deviceId || "");
-  const [maintenanceDate, setMaintenanceDate] = useState(initialData?.maintenanceDate || "");
-  const [nextMaintenanceDate, setNextMaintenanceDate] = useState(initialData?.nextMaintenanceDate || "");
-  const [status, setStatus] = useState(initialData?.status || "scheduled");
-  const [notes, setNotes] = useState(initialData?.notes || "");
+  const [date, setDate] = useState(initialData?.date || "");
+  const [frequency, setFrequency] = useState(initialData?.frequency || "");
+  const [status, setStatus] = useState<MaintenanceStatus>(initialData?.status || "đã bảo trì");
+  const [content, setContent] = useState(initialData?.content || "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +46,10 @@ const MaintenanceForm: React.FC<MaintenanceFormProps> = ({
     const maintenanceData: MaintenanceType = {
       id: initialData?.id || Math.random().toString(36).substr(2, 9),
       deviceId,
-      maintenanceDate,
-      nextMaintenanceDate,
+      date,
+      frequency,
       status,
-      notes,
+      content,
     };
     
     onSubmit(maintenanceData);
@@ -80,26 +84,26 @@ const MaintenanceForm: React.FC<MaintenanceFormProps> = ({
           </div>
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="maintenanceDate" className="text-right">
+          <label htmlFor="date" className="text-right">
             Ngày Bảo Trì
           </label>
           <Input
-            id="maintenanceDate"
+            id="date"
             type="date"
-            value={maintenanceDate}
-            onChange={(e) => setMaintenanceDate(e.target.value)}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             className="col-span-3"
           />
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="nextMaintenanceDate" className="text-right">
-            Ngày Bảo Trì Tiếp Theo
+          <label htmlFor="frequency" className="text-right">
+            Tần Suất Bảo Trì
           </label>
           <Input
-            id="nextMaintenanceDate"
-            type="date"
-            value={nextMaintenanceDate}
-            onChange={(e) => setNextMaintenanceDate(e.target.value)}
+            id="frequency"
+            type="text"
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value)}
             className="col-span-3"
           />
         </div>
@@ -108,27 +112,28 @@ const MaintenanceForm: React.FC<MaintenanceFormProps> = ({
             Trạng Thái
           </label>
           <div className="col-span-3">
-            <Select onValueChange={setStatus} defaultValue={status}>
+            <Select 
+              onValueChange={(value: MaintenanceStatus) => setStatus(value)} 
+              defaultValue={status}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="scheduled">Đã lên lịch</SelectItem>
-                <SelectItem value="in-progress">Đang thực hiện</SelectItem>
-                <SelectItem value="completed">Hoàn thành</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
+                <SelectItem value="đã bảo trì">Đã bảo trì</SelectItem>
+                <SelectItem value="chưa bảo trì">Chưa bảo trì</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="notes" className="text-right">
-            Ghi Chú
+          <label htmlFor="content" className="text-right">
+            Nội Dung
           </label>
           <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
             className="col-span-3"
             rows={4}
           />
@@ -218,31 +223,24 @@ const Maintenance = () => {
     },
     {
       header: "Ngày Bảo Trì",
-      accessorKey: "maintenanceDate" as keyof FullMaintenance,
+      accessorKey: "date" as keyof FullMaintenance,
       enableSorting: true,
     },
     {
-      header: "Ngày Bảo Trì Tiếp Theo",
-      accessorKey: "nextMaintenanceDate" as keyof FullMaintenance,
+      header: "Tần Suất Bảo Trì",
+      accessorKey: "frequency" as keyof FullMaintenance,
       enableSorting: true,
     },
     {
       header: "Trạng Thái",
       accessorKey: (row: FullMaintenance) => {
-        const statusMap: Record<string, string> = {
-          'scheduled': 'Đã lên lịch',
-          'in-progress': 'Đang thực hiện',
-          'completed': 'Hoàn thành',
-          'cancelled': 'Đã hủy'
-        };
-        
-        return <StatusBadge status={statusMap[row.status] || row.status} />;
+        return <StatusBadge status={row.status} />;
       },
       enableSorting: false,
     },
     {
-      header: "Ghi Chú",
-      accessorKey: "notes" as keyof FullMaintenance,
+      header: "Nội Dung",
+      accessorKey: "content" as keyof FullMaintenance,
       enableSorting: false,
     },
     {
@@ -258,10 +256,10 @@ const Maintenance = () => {
               const maintenance: MaintenanceType = {
                 id: row.id,
                 deviceId: row.deviceId,
-                maintenanceDate: row.maintenanceDate,
-                nextMaintenanceDate: row.nextMaintenanceDate,
+                date: row.date,
+                frequency: row.frequency,
                 status: row.status,
-                notes: row.notes,
+                content: row.content,
               };
               setSelectedMaintenance(maintenance);
               setEditDialogOpen(true);
@@ -278,10 +276,10 @@ const Maintenance = () => {
               const maintenance: MaintenanceType = {
                 id: row.id,
                 deviceId: row.deviceId,
-                maintenanceDate: row.maintenanceDate,
-                nextMaintenanceDate: row.nextMaintenanceDate,
+                date: row.date,
+                frequency: row.frequency,
                 status: row.status,
-                notes: row.notes,
+                content: row.content,
               };
               setSelectedMaintenance(maintenance);
               setDeleteDialogOpen(true);

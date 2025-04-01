@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,10 +121,36 @@ const RepairHistoryPage = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check local storage for repair histories that were added from the invoices page
+  useEffect(() => {
+    const storedHistories = localStorage.getItem('repairHistories');
+    if (storedHistories) {
+      try {
+        const parsedHistories = JSON.parse(storedHistories);
+        if (Array.isArray(parsedHistories) && parsedHistories.length > 0) {
+          setData(prevData => {
+            // Filter out duplicates based on id
+            const existingIds = new Set(prevData.map(item => item.id));
+            const newHistories = parsedHistories.filter(item => !existingIds.has(item.id));
+            return [...prevData, ...newHistories];
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing repair histories from localStorage:', error);
+      }
+    }
+  }, []);
+
   const onSubmit: (data: RepairHistory) => void = async (inputData) => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    setData([...data, inputData]);
+    
+    const newData = [...data, inputData];
+    setData(newData);
+    
+    // Store in localStorage to persist between page reloads
+    localStorage.setItem('repairHistories', JSON.stringify(newData));
+    
     toast.success("Thêm lịch sử sửa chữa thành công!");
     setIsLoading(false);
   };
@@ -162,6 +189,14 @@ const RepairHistoryPage = () => {
       header: "Ghi Chú",
       accessorKey: "notes" as keyof RepairHistory,
       enableSorting: false,
+    },
+    {
+      header: "Ngày Tạo",
+      accessorKey: (row: RepairHistory) => {
+        // If the record has a createdAt property, use it, otherwise display current date
+        return row.createdAt || format(new Date(), 'yyyy-MM-dd');
+      },
+      enableSorting: true,
     },
   ];
 

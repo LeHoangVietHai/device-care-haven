@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { format } from "date-fns";
-import { invoices, repairs } from "@/data/mockData";
+import { invoices, repairs, repairHistories } from "@/data/mockData";
 import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Invoice } from "@/types";
+import type { Invoice, RepairHistory } from "@/types";
 
 interface InvoiceFormProps {
   open: boolean;
@@ -23,6 +25,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ open, onOpenChange }) => {
     repairId: "",
     content: "",
     total: 0,
+    paid: false
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,14 +82,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ open, onOpenChange }) => {
           <label htmlFor="repairId" className="text-right font-medium">
             Mã Sửa Chữa
           </label>
-          <Input
-            type="text"
-            id="repairId"
-            name="repairId"
+          <Select 
+            onValueChange={(value) => setInvoiceData(prev => ({ ...prev, repairId: value }))}
             value={invoiceData.repairId}
-            onChange={handleChange}
-            className="col-span-3"
-          />
+          >
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Chọn mã sửa chữa" />
+            </SelectTrigger>
+            <SelectContent>
+              {repairs.map((repair) => (
+                <SelectItem key={repair.id} value={repair.id}>
+                  SC-{repair.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="grid grid-cols-4 items-center gap-4">
           <label htmlFor="content" className="text-right font-medium">
@@ -120,7 +130,35 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ open, onOpenChange }) => {
 };
 
 const Invoices = () => {
+  const [invoicesList, setInvoicesList] = useState(invoices.map(invoice => ({
+    ...invoice,
+    paid: false
+  })));
+  const [repairHistoryList, setRepairHistoryList] = useState(repairHistories);
   const [open, setOpen] = useState(false);
+
+  const handlePayInvoice = (invoice: Invoice & { paid: boolean }) => {
+    // Mark invoice as paid
+    const updatedInvoices = invoicesList.map(inv => 
+      inv.id === invoice.id ? { ...inv, paid: true } : inv
+    );
+    setInvoicesList(updatedInvoices);
+
+    // Get repair information and create repair history
+    const repair = repairs.find(r => r.id === invoice.repairId);
+    if (repair) {
+      const newRepairHistory: RepairHistory = {
+        id: `RH-${Math.random().toString(36).substring(2, 10)}`,
+        deviceId: repair.deviceId,
+        employeeId: repair.employeeId,
+        contractTypeId: repair.contractTypeId,
+        notes: `Thanh toán hóa đơn: ${invoice.id}. Nội dung: ${invoice.content}. Tổng tiền: ${invoice.total.toLocaleString()} VND`,
+      };
+
+      setRepairHistoryList([...repairHistoryList, newRepairHistory]);
+      toast.success("Hóa đơn đã thanh toán và đẩy xuống lịch sử sửa chữa!");
+    }
+  };
 
   const columns = [
     {
@@ -151,6 +189,29 @@ const Invoices = () => {
       accessorKey: (row: Invoice) => `${row.total.toLocaleString()} VND`,
       enableSorting: true,
     },
+    {
+      header: "Trạng Thái",
+      accessorKey: (row: Invoice & { paid: boolean }) => (
+        <StatusBadge status={row.paid ? "completed" : "pending"} />
+      ),
+      enableSorting: false,
+    },
+    {
+      header: "Thao Tác",
+      accessorKey: (row: Invoice & { paid: boolean }) => (
+        <Button
+          onClick={() => handlePayInvoice(row)}
+          disabled={row.paid}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          {row.paid ? "Đã thanh toán" : "Thanh toán"}
+        </Button>
+      ),
+      enableSorting: false,
+    },
   ];
 
   return (
@@ -159,7 +220,7 @@ const Invoices = () => {
         <h1 className="text-2xl font-bold">Hóa Đơn</h1>
         <Button onClick={() => setOpen(true)}>Thêm Hóa Đơn</Button>
       </div>
-      <DataTable columns={columns} data={invoices} />
+      <DataTable columns={columns} data={invoicesList} />
       <InvoiceForm open={open} onOpenChange={setOpen} />
     </div>
   );
