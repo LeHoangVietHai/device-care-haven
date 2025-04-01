@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
 import { FormDialog } from "@/components/ui/form-dialog";
+import { Textarea } from "@/components/ui/textarea"; 
 import { inventories, devices } from "@/data/mockData";
 import { toast } from "sonner";
+import { Pencil, Trash } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Inventory, DeviceCondition } from "@/types";
 
@@ -15,13 +17,20 @@ interface InventoryFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: Inventory) => void;
+  initialData?: Inventory;
+  isEdit?: boolean;
 }
 
-const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSubmit }) => {
-  const [deviceId, setDeviceId] = useState("");
-  const [checkDate, setCheckDate] = useState("");
-  const [condition, setCondition] = useState<DeviceCondition>("tốt");
-  const [notes, setNotes] = useState("");
+const InventoryForm: React.FC<InventoryFormProps> = ({ 
+  open, 
+  onOpenChange, 
+  onSubmit, 
+  initialData, 
+  isEdit = false 
+}) => {
+  const [deviceId, setDeviceId] = useState(initialData?.deviceId || "");
+  const [checkDate, setCheckDate] = useState(initialData?.checkDate || "");
+  const [condition, setCondition] = useState<DeviceCondition>(initialData?.condition || "tốt");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,23 +40,22 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSub
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const newInventory: Inventory = {
-      id: Math.random().toString(36).substring(7),
+    const inventoryData: Inventory = {
+      id: initialData?.id || Math.random().toString(36).substring(7),
       deviceId: deviceId,
       checkDate: checkDate,
       condition: condition,
-      notes: notes,
     };
 
-    onSubmit(newInventory);
+    onSubmit(inventoryData);
     setIsLoading(false);
     onOpenChange(false);
-    toast.success("Thêm kiểm kê thành công!");
+    toast.success(isEdit ? "Cập nhật kiểm kê thành công!" : "Thêm kiểm kê thành công!");
   };
 
   return (
     <FormDialog
-      title="Thêm Kiểm Kê"
+      title={isEdit ? "Cập Nhật Kiểm Kê" : "Thêm Kiểm Kê"}
       open={open}
       onOpenChange={onOpenChange}
       onSubmit={handleSubmit}
@@ -102,18 +110,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSub
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <label htmlFor="notes" className="text-right">
-            Ghi Chú
-          </label>
-          <Input
-            type="text"
-            id="notes"
-            className="col-span-3"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
       </div>
     </FormDialog>
   );
@@ -121,10 +117,23 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ open, onOpenChange, onSub
 
 const Inventory = () => {
   const [data, setData] = useState([...inventories]);
-  const [open, setOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState<Inventory | null>(null);
 
   const handleCreate = (inventory: Inventory) => {
     setData([...data, inventory]);
+  };
+
+  const handleEdit = (inventory: Inventory) => {
+    setData(data.map(item => item.id === inventory.id ? inventory : item));
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Bạn có chắc chắn muốn xóa kiểm kê này không?")) {
+      setData(data.filter(item => item.id !== id));
+      toast.success("Đã xóa kiểm kê thành công!");
+    }
   };
 
   // Update column definitions to use proper typing
@@ -155,8 +164,32 @@ const Inventory = () => {
       enableSorting: true,
     },
     {
-      header: "Ghi Chú",
-      accessorKey: "notes" as keyof Inventory,
+      header: "Thao Tác",
+      accessorKey: (row: Inventory) => (
+        <div className="flex space-x-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedInventory(row);
+              setEditDialogOpen(true);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row.id);
+            }}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
       enableSorting: false,
     },
   ];
@@ -165,12 +198,25 @@ const Inventory = () => {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Kiểm Kê</h1>
-        <Button onClick={() => setOpen(true)}>Thêm Kiểm Kê</Button>
+        <Button onClick={() => setAddDialogOpen(true)}>Thêm Kiểm Kê</Button>
       </div>
       <div className="py-4">
-        <DataTable columns={columns} data={data} />
+        <DataTable columns={columns} data={data} searchField="id" />
       </div>
-      <InventoryForm open={open} onOpenChange={setOpen} onSubmit={handleCreate} />
+      <InventoryForm 
+        open={addDialogOpen} 
+        onOpenChange={setAddDialogOpen} 
+        onSubmit={handleCreate} 
+      />
+      {selectedInventory && (
+        <InventoryForm 
+          open={editDialogOpen} 
+          onOpenChange={setEditDialogOpen} 
+          onSubmit={handleEdit} 
+          initialData={selectedInventory}
+          isEdit
+        />
+      )}
     </div>
   );
 };
