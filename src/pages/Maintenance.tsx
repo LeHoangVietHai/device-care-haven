@@ -1,24 +1,22 @@
-
-import { useState } from "react";
-import { DataTable } from "@/components/ui/data-table";
+import React, { useState } from "react";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { FormDialog } from "@/components/ui/form-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { StatusBadge } from "@/components/StatusBadge";
-import { getFullMaintenances, getFullDevices } from "@/data/mockData";
-import { Maintenance, Device, MaintenanceStatus } from "@/types";
+import { DataTable } from "@/components/ui/data-table";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { format } from "date-fns";
+import { maintenances, devices } from "@/data/mockData";
+import { toast } from "sonner";
+import type { ReactNode } from "react";
+import type { Maintenance } from "@/types";
 
 const Maintenance = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
-  const [maintenances, setMaintenances] = useState<Maintenance[]>(getFullMaintenances());
+  const [maintenances, setMaintenances] = useState<Maintenance[]>(maintenances);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
-  const devices = getFullDevices();
 
   // Form state
   const [maintenanceData, setMaintenanceData] = useState<Partial<Maintenance>>({
@@ -136,35 +134,38 @@ const Maintenance = () => {
 
   const columns = [
     {
-      header: "Mã",
-      accessorKey: "id",
+      header: "Mã Bảo Trì",
+      accessorKey: "id" as keyof Maintenance,
       enableSorting: true,
     },
     {
-      header: "Ngày bảo trì",
-      accessorKey: "date",
+      header: "Thiết Bị",
+      accessorKey: (row: Maintenance) => {
+        const device = devices.find(d => d.id === row.deviceId);
+        return device ? device.name : "N/A";
+      },
       enableSorting: true,
     },
     {
-      header: "Tần suất",
-      accessorKey: "frequency",
-      enableSorting: false,
+      header: "Ngày",
+      accessorKey: "date" as keyof Maintenance,
+      enableSorting: true,
     },
     {
-      header: "Nội dung",
-      accessorKey: "content",
-      enableSorting: false,
+      header: "Tần Suất",
+      accessorKey: "frequency" as keyof Maintenance,
+      enableSorting: true,
     },
     {
-      header: "Trạng thái",
-      accessorKey: (maintenance: Maintenance) => (
-        <StatusBadge status={maintenance.status} />
+      header: "Trạng Thái",
+      accessorKey: (row: Maintenance) => (
+        <StatusBadge status={row.status} />
       ),
-      enableSorting: false,
+      enableSorting: true,
     },
     {
-      header: "Thiết bị",
-      accessorKey: (maintenance: Maintenance) => maintenance.device?.name || "-",
+      header: "Nội Dung",
+      accessorKey: "content" as keyof Maintenance,
       enableSorting: false,
     },
   ];

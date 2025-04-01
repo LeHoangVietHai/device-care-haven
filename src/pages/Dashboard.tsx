@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Package,
-  Tool,
+  Wrench,
   Clipboard,
   Users,
   Settings,
@@ -51,7 +50,7 @@ const Dashboard = () => {
     {
       title: "Bảo trì",
       value: maintenances.length,
-      icon: <Tool className="h-5 w-5" />,
+      icon: <Wrench className="h-5 w-5" />,
       path: "/maintenance",
       color: "bg-indigo-100 text-indigo-800",
     },

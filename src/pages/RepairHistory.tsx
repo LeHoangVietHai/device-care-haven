@@ -1,358 +1,180 @@
-
-import { useState } from "react";
-import { DataTable } from "@/components/ui/data-table";
+import React, { useState } from "react";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { FormDialog } from "@/components/ui/form-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { getFullRepairHistories, getFullDevices, getFullEmployees, contractTypes } from "@/data/mockData";
-import { RepairHistory, Device, Employee, ContractType } from "@/types";
+import { DataTable } from "@/components/ui/data-table";
+import { FormDialog } from "@/components/ui/form-dialog";
+import { format } from "date-fns";
+import { repairHistories, devices, employees, contractTypes } from "@/data/mockData";
+import { toast } from "sonner";
+import type { ReactNode } from "react";
+import type { RepairHistory } from "@/types";
 
-const RepairHistory = () => {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const [repairHistories, setRepairHistories] = useState<RepairHistory[]>(getFullRepairHistories());
-  const [selectedRepairHistory, setSelectedRepairHistory] = useState<RepairHistory | null>(null);
-  const devices = getFullDevices();
-  const employees = getFullEmployees();
+interface RepairHistoryFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: RepairHistory) => void;
+  isLoading: boolean;
+}
 
-  // Form state
-  const [repairHistoryData, setRepairHistoryData] = useState<Partial<RepairHistory>>({
-    id: "",
-    notes: "",
-    contractTypeId: "",
-    employeeId: "",
-    deviceId: "",
-  });
+const RepairHistoryForm: React.FC<RepairHistoryFormProps> = ({ open, onOpenChange, onSubmit, isLoading }) => {
+  const [id, setId] = useState("");
+  const [deviceId, setDeviceId] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [contractTypeId, setContractTypeId] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const handleAddRepairHistory = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!repairHistoryData.id || !repairHistoryData.notes || !repairHistoryData.deviceId || !repairHistoryData.employeeId) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin lịch sử sửa chữa",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if repairHistory ID already exists
-    if (repairHistories.some(history => history.id === repairHistoryData.id)) {
-      toast({
-        title: "Lỗi",
-        description: "Mã lịch sử sửa chữa đã tồn tại",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Find references
-    const device = devices.find(dev => dev.id === repairHistoryData.deviceId);
-    const employee = employees.find(emp => emp.id === repairHistoryData.employeeId);
-    const contractType = contractTypes.find(type => type.id === repairHistoryData.contractTypeId);
-
-    const newRepairHistory: RepairHistory = {
-      id: repairHistoryData.id as string,
-      notes: repairHistoryData.notes as string,
-      contractTypeId: repairHistoryData.contractTypeId as string,
-      employeeId: repairHistoryData.employeeId as string,
-      deviceId: repairHistoryData.deviceId as string,
-      device: device as Device,
-      employee: employee as Employee,
-      contractType: contractType as ContractType,
+    const data: RepairHistory = {
+      id,
+      deviceId,
+      employeeId,
+      contractTypeId,
+      notes,
     };
-
-    setRepairHistories([...repairHistories, newRepairHistory]);
-    setIsAddDialogOpen(false);
-    
-    toast({
-      title: "Thành công",
-      description: "Thêm lịch sử sửa chữa mới thành công",
-    });
-
-    // Reset form
-    setRepairHistoryData({
-      id: "",
-      notes: "",
-      contractTypeId: "",
-      employeeId: "",
-      deviceId: "",
-    });
+    onSubmit(data);
+    onOpenChange(false);
   };
 
-  const handleEditRepairHistory = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedRepairHistory || !repairHistoryData.notes || !repairHistoryData.deviceId || !repairHistoryData.employeeId) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin lịch sử sửa chữa",
-        variant: "destructive",
-      });
-      return;
-    }
+  return (
+    <FormDialog
+      title="Thêm Lịch Sử Sửa Chữa"
+      open={open}
+      onOpenChange={onOpenChange}
+      onSubmit={handleSubmit}
+      isLoading={isLoading}
+    >
+      <div className="grid gap-4 py-4">
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="id" className="text-right font-medium">
+            Mã Lịch Sử
+          </label>
+          <Input id="id" value={id} onChange={(e) => setId(e.target.value)} className="col-span-3" />
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="deviceId" className="text-right font-medium">
+            Thiết Bị
+          </label>
+          <Select onValueChange={setDeviceId}>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Chọn thiết bị" />
+            </SelectTrigger>
+            <SelectContent>
+              {devices.map((device) => (
+                <SelectItem key={device.id} value={device.id}>
+                  {device.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="employeeId" className="text-right font-medium">
+            Nhân Viên
+          </label>
+          <Select onValueChange={setEmployeeId}>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Chọn nhân viên" />
+            </SelectTrigger>
+            <SelectContent>
+              {employees.map((employee) => (
+                <SelectItem key={employee.id} value={employee.id}>
+                  {employee.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="contractTypeId" className="text-right font-medium">
+            Loại Hợp Đồng
+          </label>
+          <Select onValueChange={setContractTypeId}>
+            <SelectTrigger className="col-span-3">
+              <SelectValue placeholder="Chọn loại hợp đồng" />
+            </SelectTrigger>
+            <SelectContent>
+              {contractTypes.map((contractType) => (
+                <SelectItem key={contractType.id} value={contractType.id}>
+                  {contractType.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-4 items-center gap-4">
+          <label htmlFor="notes" className="text-right font-medium">
+            Ghi Chú
+          </label>
+          <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="col-span-3" />
+        </div>
+      </div>
+    </FormDialog>
+  );
+};
 
-    // Find references
-    const device = devices.find(dev => dev.id === repairHistoryData.deviceId);
-    const employee = employees.find(emp => emp.id === repairHistoryData.employeeId);
-    const contractType = contractTypes.find(type => type.id === repairHistoryData.contractTypeId);
+const RepairHistoryPage = () => {
+  const [data, setData] = useState([...repairHistories]);
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const updatedRepairHistory: RepairHistory = {
-      ...selectedRepairHistory,
-      notes: repairHistoryData.notes as string,
-      contractTypeId: repairHistoryData.contractTypeId as string,
-      employeeId: repairHistoryData.employeeId as string,
-      deviceId: repairHistoryData.deviceId as string,
-      device: device as Device,
-      employee: employee as Employee,
-      contractType: contractType as ContractType,
-    };
-
-    setRepairHistories(repairHistories.map(history => 
-      history.id === selectedRepairHistory.id ? updatedRepairHistory : history
-    ));
-    
-    setIsEditDialogOpen(false);
-    
-    toast({
-      title: "Thành công",
-      description: "Cập nhật thông tin lịch sử sửa chữa thành công",
-    });
-  };
-
-  const handleRowClick = (repairHistory: RepairHistory) => {
-    setSelectedRepairHistory(repairHistory);
-    setRepairHistoryData({
-      id: repairHistory.id,
-      notes: repairHistory.notes,
-      contractTypeId: repairHistory.contractTypeId,
-      employeeId: repairHistory.employeeId,
-      deviceId: repairHistory.deviceId,
-    });
-    setIsEditDialogOpen(true);
+  const onSubmit: (data: RepairHistory) => void = async (inputData) => {
+    setIsLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setData([...data, inputData]);
+    toast.success("Thêm lịch sử sửa chữa thành công!");
+    setIsLoading(false);
   };
 
   const columns = [
     {
-      header: "Mã",
-      accessorKey: "id",
+      header: "Mã Lịch Sử",
+      accessorKey: "id" as keyof RepairHistory,
       enableSorting: true,
     },
     {
-      header: "Ghi chú",
-      accessorKey: "notes",
-      enableSorting: false,
+      header: "Thiết Bị",
+      accessorKey: (row: RepairHistory) => {
+        const device = devices.find(d => d.id === row.deviceId);
+        return device ? device.name : "N/A";
+      },
+      enableSorting: true,
     },
     {
-      header: "Loại hợp đồng",
-      accessorKey: (history: RepairHistory) => history.contractType?.name || "-",
-      enableSorting: false,
+      header: "Nhân Viên",
+      accessorKey: (row: RepairHistory) => {
+        const employee = employees.find(e => e.id === row.employeeId);
+        return employee ? employee.name : "N/A";
+      },
+      enableSorting: true,
     },
     {
-      header: "Thiết bị",
-      accessorKey: (history: RepairHistory) => history.device?.name || "-",
-      enableSorting: false,
+      header: "Loại Hợp Đồng",
+      accessorKey: (row: RepairHistory) => {
+        const contractType = contractTypes.find(ct => ct.id === row.contractTypeId);
+        return contractType ? contractType.name : "N/A";
+      },
+      enableSorting: true,
     },
     {
-      header: "Nhân viên",
-      accessorKey: (history: RepairHistory) => history.employee?.name || "-",
+      header: "Ghi Chú",
+      accessorKey: "notes" as keyof RepairHistory,
       enableSorting: false,
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Lịch sử sửa chữa</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Thêm lịch sử</Button>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Lịch Sử Sửa Chữa</h1>
+        <Button onClick={() => setOpen(true)}>Thêm Lịch Sử</Button>
       </div>
-
-      <DataTable
-        data={repairHistories}
-        columns={columns}
-        onRowClick={handleRowClick}
-        searchField="notes"
-      />
-
-      {/* Add RepairHistory Dialog */}
-      <FormDialog
-        title="Thêm lịch sử sửa chữa mới"
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSubmit={handleAddRepairHistory}
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="id">Mã lịch sử</Label>
-            <Input
-              id="id"
-              value={repairHistoryData.id}
-              onChange={(e) => setRepairHistoryData({ ...repairHistoryData, id: e.target.value })}
-              placeholder="Ví dụ: RH006"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Ghi chú</Label>
-            <Textarea
-              id="notes"
-              value={repairHistoryData.notes}
-              onChange={(e) => setRepairHistoryData({ ...repairHistoryData, notes: e.target.value })}
-              placeholder="Nhập ghi chú sửa chữa"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="contractTypeId">Loại hợp đồng</Label>
-            <Select 
-              value={repairHistoryData.contractTypeId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, contractTypeId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại hợp đồng" />
-              </SelectTrigger>
-              <SelectContent>
-                {contractTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="deviceId">Thiết bị</Label>
-            <Select 
-              value={repairHistoryData.deviceId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, deviceId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn thiết bị" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="employeeId">Nhân viên</Label>
-            <Select 
-              value={repairHistoryData.employeeId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, employeeId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhân viên" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </FormDialog>
-
-      {/* Edit RepairHistory Dialog */}
-      <FormDialog
-        title="Chỉnh sửa lịch sử sửa chữa"
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        onSubmit={handleEditRepairHistory}
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="edit-id">Mã lịch sử</Label>
-            <Input
-              id="edit-id"
-              value={repairHistoryData.id}
-              disabled
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="edit-notes">Ghi chú</Label>
-            <Textarea
-              id="edit-notes"
-              value={repairHistoryData.notes}
-              onChange={(e) => setRepairHistoryData({ ...repairHistoryData, notes: e.target.value })}
-              placeholder="Nhập ghi chú sửa chữa"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="edit-contractTypeId">Loại hợp đồng</Label>
-            <Select 
-              value={repairHistoryData.contractTypeId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, contractTypeId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại hợp đồng" />
-              </SelectTrigger>
-              <SelectContent>
-                {contractTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="edit-deviceId">Thiết bị</Label>
-            <Select 
-              value={repairHistoryData.deviceId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, deviceId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn thiết bị" />
-              </SelectTrigger>
-              <SelectContent>
-                {devices.map((device) => (
-                  <SelectItem key={device.id} value={device.id}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="edit-employeeId">Nhân viên</Label>
-            <Select 
-              value={repairHistoryData.employeeId} 
-              onValueChange={(value) => setRepairHistoryData({ ...repairHistoryData, employeeId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn nhân viên" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </FormDialog>
+      <DataTable columns={columns} data={data} />
+      <RepairHistoryForm open={open} onOpenChange={setOpen} onSubmit={onSubmit} isLoading={isLoading} />
     </div>
   );
 };
 
-export default RepairHistory;
+export default RepairHistoryPage;

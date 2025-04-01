@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ const Repairs = () => {
   const devices = getFullDevices();
   const employees = getFullEmployees();
 
-  // Form state
   const [repairData, setRepairData] = useState<Partial<Repair>>({
     id: "",
     repairDate: "",
@@ -59,7 +57,6 @@ const Repairs = () => {
       return;
     }
 
-    // Check if repair ID already exists
     if (repairs.some(repair => repair.id === repairData.id)) {
       toast({
         title: "Lỗi",
@@ -69,7 +66,6 @@ const Repairs = () => {
       return;
     }
 
-    // Find references
     const device = devices.find(dev => dev.id === repairData.deviceId);
     const employee = employees.find(emp => emp.id === repairData.employeeId);
     const supplier = suppliers.find(sup => sup.id === repairData.supplierId);
@@ -99,7 +95,6 @@ const Repairs = () => {
       description: "Thêm hợp đồng sửa chữa mới thành công",
     });
 
-    // Reset form
     setRepairData({
       id: "",
       repairDate: "",
@@ -125,7 +120,6 @@ const Repairs = () => {
       return;
     }
 
-    // Find references
     const device = devices.find(dev => dev.id === repairData.deviceId);
     const employee = employees.find(emp => emp.id === repairData.employeeId);
     const supplier = suppliers.find(sup => sup.id === repairData.supplierId);
@@ -177,50 +171,62 @@ const Repairs = () => {
 
   const columns = [
     {
-      header: "Mã",
-      accessorKey: "id",
+      header: "Mã Sửa Chữa",
+      accessorKey: "id" as keyof Repair,
       enableSorting: true,
     },
     {
-      header: "Ngày sửa chữa",
-      accessorKey: "repairDate",
+      header: "Thiết Bị",
+      accessorKey: (row: Repair) => {
+        const device = devices.find(d => d.id === row.deviceId);
+        return device ? device.name : "N/A";
+      },
       enableSorting: true,
     },
     {
-      header: "Ghi chú",
-      accessorKey: "notes",
-      enableSorting: false,
+      header: "Nhân Viên",
+      accessorKey: (row: Repair) => {
+        const employee = employees.find(e => e.id === row.employeeId);
+        return employee ? employee.name : "N/A";
+      },
+      enableSorting: true,
     },
     {
-      header: "Trạng thái",
-      accessorKey: (repair: Repair) => (
-        <StatusBadge status={repair.status} />
+      header: "Nhà Cung Cấp",
+      accessorKey: (row: Repair) => {
+        const supplier = suppliers.find(s => s.id === row.supplierId);
+        return supplier ? supplier.name : "N/A";
+      },
+      enableSorting: true,
+    },
+    {
+      header: "Loại Hợp Đồng",
+      accessorKey: (row: Repair) => {
+        const contractType = contractTypes.find(ct => ct.id === row.contractTypeId);
+        return contractType ? contractType.name : "N/A";
+      },
+      enableSorting: true,
+    },
+    {
+      header: "Ngày Sửa Chữa",
+      accessorKey: "repairDate" as keyof Repair,
+      enableSorting: true,
+    },
+    {
+      header: "Trạng Thái",
+      accessorKey: (row: Repair) => (
+        <StatusBadge status={row.status} />
       ),
-      enableSorting: false,
+      enableSorting: true,
     },
     {
-      header: "Chi phí",
-      accessorKey: (repair: Repair) => formatCurrency(repair.cost),
-      enableSorting: false,
+      header: "Chi Phí",
+      accessorKey: (row: Repair) => `${row.cost.toLocaleString()} VND`,
+      enableSorting: true,
     },
     {
-      header: "Loại hợp đồng",
-      accessorKey: (repair: Repair) => repair.contractType?.name || "-",
-      enableSorting: false,
-    },
-    {
-      header: "Thiết bị",
-      accessorKey: (repair: Repair) => repair.device?.name || "-",
-      enableSorting: false,
-    },
-    {
-      header: "Nhân viên",
-      accessorKey: (repair: Repair) => repair.employee?.name || "-",
-      enableSorting: false,
-    },
-    {
-      header: "Nhà cung cấp",
-      accessorKey: (repair: Repair) => repair.supplier?.name || "-",
+      header: "Ghi Chú",
+      accessorKey: "notes" as keyof Repair,
       enableSorting: false,
     },
   ];
@@ -239,7 +245,6 @@ const Repairs = () => {
         searchField="notes"
       />
 
-      {/* Add Repair Dialog */}
       <FormDialog
         title="Thêm hợp đồng sửa chữa mới"
         open={isAddDialogOpen}
@@ -382,7 +387,6 @@ const Repairs = () => {
         </div>
       </FormDialog>
 
-      {/* Edit Repair Dialog */}
       <FormDialog
         title="Chỉnh sửa thông tin sửa chữa"
         open={isEditDialogOpen}

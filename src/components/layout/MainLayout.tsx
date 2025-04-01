@@ -4,7 +4,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { 
   Settings, 
   Clipboard, 
-  Tool, 
+  Wrench, 
   Users, 
   FileText, 
   Package, 
@@ -24,7 +24,7 @@ const MainLayout = () => {
   const navigationItems = [
     { name: "Dashboard", path: "/", icon: <LayoutDashboard className="w-5 h-5 mr-2" /> },
     { name: "Thiết Bị", path: "/devices", icon: <Package className="w-5 h-5 mr-2" /> },
-    { name: "Bảo Trì", path: "/maintenance", icon: <Tool className="w-5 h-5 mr-2" /> },
+    { name: "Bảo Trì", path: "/maintenance", icon: <Wrench className="w-5 h-5 mr-2" /> },
     { name: "Kiểm Kê", path: "/inventory", icon: <Clipboard className="w-5 h-5 mr-2" /> },
     { name: "Nhân Viên", path: "/employees", icon: <Users className="w-5 h-5 mr-2" /> },
     { name: "Sửa Chữa", path: "/repairs", icon: <Settings className="w-5 h-5 mr-2" /> },

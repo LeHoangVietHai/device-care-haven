@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
@@ -137,33 +136,39 @@ const Employees = () => {
 
   const columns = [
     {
-      header: "Mã",
-      accessorKey: "id",
+      header: "Mã Nhân Viên",
+      accessorKey: "id" as keyof Employee,
       enableSorting: true,
     },
     {
-      header: "Tên nhân viên",
-      accessorKey: "name",
+      header: "Tên",
+      accessorKey: "name" as keyof Employee,
       enableSorting: true,
     },
     {
-      header: "Số điện thoại",
-      accessorKey: "phone",
+      header: "Chức Vụ",
+      accessorKey: (row: Employee) => {
+        const position = positions.find(p => p.id === row.positionId);
+        return position ? position.name : "N/A";
+      },
+      enableSorting: true,
+    },
+    {
+      header: "Phòng Ban",
+      accessorKey: (row: Employee) => {
+        const department = departments.find(d => d.id === row.departmentId);
+        return department ? department.name : "N/A";
+      },
+      enableSorting: true,
+    },
+    {
+      header: "Số Điện Thoại",
+      accessorKey: "phone" as keyof Employee,
       enableSorting: false,
     },
     {
       header: "Email",
-      accessorKey: "email",
-      enableSorting: false,
-    },
-    {
-      header: "Chức vụ",
-      accessorKey: (employee: Employee) => employee.position?.name || "-",
-      enableSorting: false,
-    },
-    {
-      header: "Phòng ban",
-      accessorKey: (employee: Employee) => employee.department?.name || "-",
+      accessorKey: "email" as keyof Employee,
       enableSorting: false,
     },
   ];
